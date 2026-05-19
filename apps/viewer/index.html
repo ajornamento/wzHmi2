@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HMI Viewer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #111; color: #ccc; font-family: sans-serif; overflow: hidden; }
+
+    /* ── 툴바 ── */
+    #toolbar {
+      position: fixed; top: 0; left: 0; right: 0; height: 40px; z-index: 100;
+      display: flex; align-items: center; gap: 8px; padding: 0 12px;
+      background: rgba(20,20,30,0.95); border-bottom: 1px solid #333;
+      backdrop-filter: blur(4px);
+    }
+    #toolbar .logo { color: #88aaff; font-weight: bold; font-size: 14px; margin-right: 4px; }
+    #toolbar .sep { width: 1px; height: 20px; background: #444; flex-shrink: 0; }
+    #toolbar input[type="range"] { width: 80px; cursor: pointer; }
+    #toolbar input[type="text"] {
+      background: #1a1a2a; border: 1px solid #444; color: #ccc;
+      border-radius: 3px; padding: 2px 6px; font-size: 12px;
+    }
+    #toolbar select {
+      background: #2a2a3a; color: #ccc; border: 1px solid #444;
+      border-radius: 3px; padding: 2px 6px; font-size: 12px; cursor: pointer;
+    }
+    #toolbar label { color: #888; font-size: 12px; white-space: nowrap; }
+    #toolbar .spacer { flex: 1; }
+
+    /* ── 버튼 ── */
+    .tb-btn {
+      background: #2a2a3a; color: #888; border: 1px solid #444;
+      border-radius: 3px; padding: 3px 10px; cursor: pointer; font-size: 12px;
+      white-space: nowrap;
+    }
+    .tb-btn:hover { border-color: #888; color: #ccc; }
+    .tb-btn.active { border-color: #4a9eff; color: #4a9eff; }
+    .role-btn.active { font-weight: bold; }
+    .role-btn[data-role="VIEWER"].active  { border-color: #888; color: #888; }
+    .role-btn[data-role="OPERATOR"].active { border-color: #4a9eff; color: #4a9eff; }
+    .role-btn[data-role="ADMIN"].active   { border-color: #ff7b4a; color: #ff7b4a; }
+
+    /* ── 캔버스 영역 ── */
+    #hmi-canvas-outer {
+      position: fixed; top: 40px; left: 0; right: 0; bottom: 0;
+      overflow: hidden; background: #111;
+    }
+    #hmi-canvas-scaler { position: absolute; }
+    #hmi-canvas { position: relative; overflow: hidden; }
+  </style>
+</head>
+<body>
+
+<!-- ── x-template 블록 ── -->
+<script type="text/x-template" id="tmpl-server-file-option">
+  <option value="${name}">${name}</option>
+</script>
+
+<!-- ── 툴바 ── -->
+<div id="toolbar">
+  <span class="logo">HMI Viewer</span>
+
+  <button id="btn-open" class="tb-btn">파일 열기</button>
+  <input id="file-input" type="file" accept=".json" style="display:none" />
+
+  <select id="server-files" style="display:none">
+    <option value="">서버 파일...</option>
+  </select>
+
+  <div class="sep"></div>
+
+  <label>스케일:</label>
+  <input id="scale-range" type="range" min="0.2" max="2" step="0.05" value="1" />
+  <span id="scale-display">100%</span>
+
+  <div class="sep"></div>
+
+  <label>서버:</label>
+  <input id="server-url" type="text" value="ws://localhost:3001" style="width:180px" title="서버 URL" />
+
+  <div class="sep"></div>
+
+  <label>소스:</label>
+  <button class="tb-btn src-btn active" data-mode="websocket">WS</button>
+  <button class="tb-btn src-btn" data-mode="polling">HTTP</button>
+  <button class="tb-btn src-btn" data-mode="mqtt">MQTT</button>
+
+  <span id="polling-controls" style="display:none; display:flex; align-items:center; gap:4px;">
+    <label>주기:</label>
+    <select id="polling-interval">
+      <option value="500">0.5s</option>
+      <option value="1000">1s</option>
+      <option value="2000" selected>2s</option>
+      <option value="5000">5s</option>
+    </select>
+  </span>
+
+  <span id="mqtt-controls" style="display:none; display:flex; align-items:center; gap:4px;">
+    <label>브로커:</label>
+    <input id="mqtt-broker-url" type="text" value="ws://localhost:9001"
+           style="width:160px" title="MQTT 브로커 URL" />
+  </span>
+
+  <div class="spacer"></div>
+
+  <label>역할:</label>
+  <button class="tb-btn role-btn" data-role="VIEWER">VIEWER</button>
+  <button class="tb-btn role-btn" data-role="OPERATOR">OPERATOR</button>
+  <button class="tb-btn role-btn" data-role="ADMIN">ADMIN</button>
+</div>
+
+<!-- ── HMI 캔버스 ── -->
+<div id="hmi-canvas-outer">
+  <div id="hmi-canvas-scaler">
+    <div id="hmi-canvas"></div>
+  </div>
+</div>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

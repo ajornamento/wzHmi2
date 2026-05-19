@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.cache/
+*.local
+.env
+.env.*
+*.log
+*.tsbuildinfo
+apps/hmi-files/
