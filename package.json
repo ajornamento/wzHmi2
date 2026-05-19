@@ -7,9 +7,10 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:editor\" \"npm run dev:viewer\"",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:editor\" \"npm run dev:viewer\" \"npm run dev:mes\"",
     "dev:editor": "npm run dev --workspace=apps/editor",
     "dev:viewer": "npm run dev --workspace=apps/viewer",
+    "dev:mes": "npm run dev --workspace=apps/mes",
     "dev:server": "npm run dev --workspace=apps/dev-server",
     "build": "npm run build --workspaces --if-present"
   },
