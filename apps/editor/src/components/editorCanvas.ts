@@ -1,6 +1,8 @@
 // 에디터 캔버스 — 위젯 프리뷰 렌더링, 드래그앤드롭, 선택, 키보드 단축키
 import $ from 'jquery';
 import type { Widget, WidgetType } from '@wzhmi/core';
+import { getWidgetTag, getCustomWidgetDef } from '@wzhmi/widgets';
+import type { BaseWidget } from '@wzhmi/widgets';
 import { useEditorStore } from '../store/editorStore';
 
 const store = useEditorStore;
@@ -10,12 +12,6 @@ let $outer: JQuery;
 let $canvas: JQuery;
 let $selectionBox: JQuery;
 
-const WIDGET_LABELS: Record<string, string> = {
-  MOTOR: '모터', VALVE: '밸브', GAUGE: '게이지', TANK: '탱크',
-  CONVEYOR: '컨베이어', ALARM: '알람', TEXT_LABEL: '텍스트', LINE: '라인',
-  PIPE: '파이프', WORKSTATION: '작업대', HOPPER: '호퍼', REACTOR: '반응기',
-  WAREHOUSE: '창고', OVEN: '오븐', METAL_DETECTOR: '금속검출기', XRAY: 'X-Ray',
-};
 
 // 캔버스 스케일 / 오프셋
 function getScale(): number { return store.getState().canvasScale; }
@@ -84,36 +80,15 @@ function renderWidgets() {
 }
 
 function createWidgetPreview(w: Widget, selected: boolean): JQuery {
-  const isLine = w.type === 'LINE';
-  const label = WIDGET_LABELS[w.type] ?? w.type;
-
-  const $el = $(`
-    <div class="widget-preview${selected ? ' selected' : ''}"
-         data-id="${w.id}"
-         style="
-           position:absolute;
-           left:${w.geometry.x}px;
-           top:${w.geometry.y}px;
-           width:${w.geometry.width}px;
-           height:${w.geometry.height}px;
-           transform:rotate(${(w.geometry.rotation as number | undefined) ?? 0}deg);
-           z-index:${w.geometry.zIndex};
-           opacity:${w.styles.opacity ?? 1};
-           display:${w.styles.visible !== false ? 'flex' : 'none'};
-           align-items:center;
-           justify-content:center;
-           border:${isLine ? '1px dashed #aaa' : `2px solid ${selected ? '#4a9eff' : '#556'}`};
-           background:${isLine ? 'transparent' : (w.styles.baseColor ?? '#2a3a5a')};
-           border-radius:4px;
-           box-sizing:border-box;
-           cursor:move;
-           user-select:none;
-         ">
-      <span style="color:#ccc;font-size:11px;pointer-events:none;">${label}<br/>${w.name}</span>
-    </div>
-  `);
-
-  return $el;
+  const tagName = getWidgetTag(w.type);
+  const el = document.createElement(tagName ?? 'div') as BaseWidget;
+  el.classList.add('widget-preview');
+  if (selected) el.classList.add('selected');
+  el.dataset.id = w.id;
+  el.style.cursor = 'move';
+  el.style.userSelect = 'none';
+  if (typeof el.configure === 'function') el.configure(w);
+  return $(el);
 }
 
 // ── 선택 박스 ────────────────────────────────────────────────────
@@ -179,7 +154,9 @@ function bindDropZone() {
     const type = dt?.getData('widget-type') as WidgetType | undefined;
     if (!type) return;
     const pos = screenToCanvas(e.pageX ?? 0, e.pageY ?? 0);
-    store.getState().addWidget(type, undefined);
+    const customDef = type.startsWith('CUSTOM_') ? getCustomWidgetDef(type) : undefined;
+    const customGeometry = customDef ? { width: customDef.defaultWidth, height: customDef.defaultHeight } : undefined;
+    store.getState().addWidget(type, undefined, customGeometry);
     // 추가된 위젯을 드롭 위치로 이동
     const { schema, selectedId } = store.getState();
     if (selectedId) {
@@ -192,8 +169,10 @@ function bindDropZone() {
 // ── 캔버스 클릭 시 선택 해제 ──────────────────────────────────────
 function bindCanvasClick() {
   $canvas.on('mousedown', (e) => {
-    if ($(e.target as HTMLElement).hasClass('widget-preview') ||
-        $(e.target as HTMLElement).closest('.widget-preview').length) return;
+    const $t = $(e.target as HTMLElement);
+    if ($t.hasClass('widget-preview') || $t.closest('.widget-preview').length) return;
+    if ($t.closest('#selection-handles').length) return;
+    if ($t.closest('#line-handles-svg').length) return;
     store.getState().selectWidget(null);
   });
 }

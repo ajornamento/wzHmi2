@@ -2,12 +2,13 @@
 import $ from 'jquery';
 import { hasPermission } from '@wzhmi/core';
 import type { Widget } from '@wzhmi/core';
-import { WIDGET_TAG_MAP } from '@wzhmi/widgets';
+import { getWidgetTag } from '@wzhmi/widgets';
 import type { BaseWidget } from '@wzhmi/widgets';
 import { DataBindingEngine } from '../engine/DataBindingEngine';
 import type { IDataSource } from '../engine/DataBindingEngine';
 import { PollingDataSource } from '../engine/PollingDataSource';
 import { MqttDataSource } from '../engine/MqttDataSource';
+import { MockDataSource } from '../engine/MockDataSource';
 import { useViewerStore } from '../store/viewerStore';
 
 const store = useViewerStore;
@@ -24,7 +25,9 @@ function reinitEngine() {
   const { dataSourceMode, serverUrl, pollInterval, customPollFn, mqttBrokerUrl } = store.getState();
 
   engine =
-    dataSourceMode === 'mqtt'
+    dataSourceMode === 'mock'
+      ? new MockDataSource()
+      : dataSourceMode === 'mqtt'
       ? new MqttDataSource(mqttBrokerUrl)
       : dataSourceMode === 'polling'
       ? new PollingDataSource(serverUrl, pollInterval, customPollFn ?? undefined)
@@ -82,7 +85,7 @@ function renderWidgets() {
 
   for (const widget of sorted) {
     if (!widget.styles.visible) continue;
-    const tagName = WIDGET_TAG_MAP[widget.type];
+    const tagName = getWidgetTag(widget.type);
     if (!tagName) continue;
 
     const el = document.createElement(tagName) as BaseWidget;
@@ -126,7 +129,7 @@ function handleWidgetClick(widget: Widget, currentUser: { id: string; role: stri
     if (typeof fn === 'function') {
       (fn as (w: Widget) => void)(widget);
     } else {
-      console.warn(`액션 함수가 없습니다: ${action}`);
+      console.error(`[HMI] 액션 함수 미등록: "${action}". window.${action} 을 확인하세요.`);
     }
   };
 

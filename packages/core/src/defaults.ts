@@ -116,6 +116,18 @@ export function defaultWidget(type: Widget['type'], id: string): Widget {
       properties: { label: '', showTooltip: false },
     };
   }
+  if (type.startsWith('CUSTOM_')) {
+    return {
+      id,
+      type,
+      name: `${type}-${id}`,
+      geometry: { x: 100, y: 100, width: 120, height: 120, rotation: 0, zIndex: 1 },
+      binding: { tagId: '', dataType: 'INT', refreshRate: 500 },
+      styles: { opacity: 1, visible: true, baseColor: '#808080', animations: [] },
+      actions: { confirmRequired: false },
+      properties: { label: type.replace('CUSTOM_', ''), showTooltip: true },
+    };
+  }
   return {
     id,
     type,

@@ -16,10 +16,13 @@ export { WarehouseWidget } from './WarehouseWidget';
 export { OvenWidget } from './OvenWidget';
 export { MetalDetectorWidget } from './MetalDetectorWidget';
 export { XRayWidget } from './XRayWidget';
+export { CustomImageWidget } from './CustomImageWidget';
+export { getAllCustomWidgets, getCustomWidgetDef, registerCustomWidget, removeCustomWidget } from './customWidgetRegistry';
+export type { CustomWidgetDef } from './customWidgetRegistry';
 
 import type { WidgetType } from '@wzhmi/core';
 
-export const WIDGET_TAG_MAP: Record<WidgetType, string> = {
+export const WIDGET_TAG_MAP: Record<string, string> = {
   MOTOR: 'hmi-motor',
   VALVE: 'hmi-valve',
   GAUGE: 'hmi-gauge',
@@ -38,6 +41,13 @@ export const WIDGET_TAG_MAP: Record<WidgetType, string> = {
   XRAY: 'hmi-xray',
 };
 
+// CUSTOM_* 타입은 'hmi-custom-image'로 라우팅
+export function getWidgetTag(type: WidgetType): string | undefined {
+  if (type in WIDGET_TAG_MAP) return WIDGET_TAG_MAP[type];
+  if (type.startsWith('CUSTOM_')) return 'hmi-custom-image';
+  return undefined;
+}
+
 export function registerAllWidgets() {
   import('./MotorWidget');
   import('./ValveWidget');
@@ -55,4 +65,5 @@ export function registerAllWidgets() {
   import('./OvenWidget');
   import('./MetalDetectorWidget');
   import('./XRayWidget');
+  import('./CustomImageWidget');
 }

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { HmiSchema, Widget, WidgetType, LineConnection } from '@wzhmi/core';
+import type { HmiSchema, Widget, WidgetType, LineConnection, Geometry } from '@wzhmi/core';
 import { emptySchema, defaultWidget, LINE_PAD } from '@wzhmi/core';
 
 type HistoryEntry = HmiSchema;
@@ -14,7 +14,7 @@ interface EditorState {
 
   setCanvas: (canvas: Partial<HmiSchema['canvas']>) => void;
   setCanvasScale: (scale: number) => void;
-  addWidget: (type: WidgetType, customProperties?: Partial<Widget['properties']>) => void;
+  addWidget: (type: WidgetType, customProperties?: Partial<Widget['properties']>, customGeometry?: Partial<Geometry>) => void;
   removeWidget: (id: string) => void;
   updateWidget: (id: string, patch: Partial<Widget>) => void;
   selectWidget: (id: string | null) => void;
@@ -65,11 +65,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     return pushHistory(s, newSchema);
   }),
 
-  addWidget: (type, customProperties) => set((s) => {
+  addWidget: (type, customProperties, customGeometry) => set((s) => {
     const id = genId();
     const widget = defaultWidget(type, id);
     if (customProperties) {
       widget.properties = { ...widget.properties, ...customProperties };
+    }
+    if (customGeometry) {
+      widget.geometry = { ...widget.geometry, ...customGeometry };
     }
     const snapTo10 = (v: number) => Math.round(v / 10) * 10;
     const newX = snapTo10(100 + Math.random() * 200);
