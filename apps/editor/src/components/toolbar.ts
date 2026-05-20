@@ -22,7 +22,7 @@ async function openFile() {
 }
 
 async function saveFile() {
-  const { schema, fileName } = store.getState();
+  const { schema } = store.getState();
   const json = JSON.stringify(schema, null, 2);
 
   if (fileHandle) {
@@ -31,9 +31,13 @@ async function saveFile() {
       await writable.write(json);
       await writable.close();
       return;
-    } catch { /* fallback to download */ }
+    } catch {
+      fileHandle = null;
+    }
   }
-  downloadJson(json, fileName);
+
+  // 열려있는 파일 없으면 다른이름으로 저장 흐름으로 — 이후 저장은 다이얼로그 없음
+  await saveFileAs();
 }
 
 async function saveFileAs() {
@@ -65,7 +69,9 @@ function downloadJson(json: string, name: string) {
 }
 
 function openViewer() {
-  const viewer = window.open('/viewer/', '_blank');
+  // 뷰어는 별도 Vite 서버(5174)로 실행됨 — 같은 오리진의 /viewer/ 경로가 아님
+  const viewerUrl = (import.meta as { env?: { VITE_VIEWER_URL?: string } }).env?.VITE_VIEWER_URL ?? 'http://localhost:5174/';
+  const viewer = window.open(viewerUrl, '_blank');
   if (!viewer) return;
   const schema = JSON.stringify(store.getState().schema);
   const send = () => viewer.postMessage({ type: 'preview-schema', schema }, '*');
@@ -91,6 +97,13 @@ export function initToolbar() {
   $('#btn-open').on('click', openFile);
   $('#btn-save').on('click', saveFile);
   $('#btn-save-as').on('click', saveFileAs);
+
+  $(document).on('keydown.toolbar', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      if (e.shiftKey) saveFileAs(); else saveFile();
+    }
+  });
   $('#btn-undo').on('click', () => store.getState().undo());
   $('#btn-redo').on('click', () => store.getState().redo());
   $('#btn-open-viewer').on('click', openViewer);
