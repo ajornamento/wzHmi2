@@ -47,9 +47,11 @@ function updateToolbar() {
     .then((r) => r.json())
     .then((files: string[]) => {
       const $sel = $('#server-files');
+      const current = $sel.val() as string;
       $sel.find('option:not(:first)').remove();
       if (files.length > 0) {
         files.forEach((f) => $sel.append(`<option value="${f}">${f}</option>`));
+        if (current) $sel.val(current);
         $sel.show();
       } else {
         $sel.hide();
@@ -86,7 +88,6 @@ function bindToolbarEvents() {
       .then((r) => r.json())
       .then((json: HmiSchema) => store.getState().setSchema(json))
       .catch(() => alert('서버에서 파일을 불러오지 못했습니다.'));
-    $(this).val('');
   });
 
   // 스케일 슬라이더

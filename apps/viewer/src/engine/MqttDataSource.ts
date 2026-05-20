@@ -14,7 +14,7 @@ export class MqttDataSource implements IDataSource {
   }
 
   connect() {
-    this.client = mqtt.connect(this.brokerUrl);
+    this.client = mqtt.connect(this.brokerUrl, { reconnectPeriod: 0 });
 
     this.client.on('connect', () => {
       for (const tagId of this.subscribers.keys()) {
@@ -30,7 +30,10 @@ export class MqttDataSource implements IDataSource {
       } catch {}
     });
 
-    this.client.on('error', () => this.client?.end());
+    this.client.on('error', (err) => {
+      console.error(`[MQTT] 브로커 연결 실패 (${this.brokerUrl}):`, err.message);
+      this.client?.end();
+    });
   }
 
   disconnect() {

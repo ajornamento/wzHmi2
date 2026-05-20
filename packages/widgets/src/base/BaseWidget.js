@@ -82,7 +82,14 @@ export class BaseWidget extends HTMLElement {
         this._handleMouseLeave(); // 재구성 시 열려 있던 툴팁 닫기
         this.applyGeometry();
         this.render();
-        this.updateValueDisplay();
+        const pv = widget.properties.previewValue;
+        if (pv != null && pv !== '') {
+            const pvStr = String(pv);
+            const numVal = Number(pvStr);
+            this.setValue(!isNaN(numVal) ? numVal : pvStr === 'true' ? true : pvStr === 'false' ? false : pvStr);
+        } else {
+            this.updateValueDisplay();
+        }
     }
     setValue(value) {
         this._value = value;
@@ -273,7 +280,8 @@ export class BaseWidget extends HTMLElement {
             this._pulseInterval = null;
         }
         this._pulseScale = 1;
-        this.style.transform = '';
+        const rotation = this._widget?.geometry.rotation ?? 0;
+        this.style.transform = rotation !== 0 ? `rotate(${rotation}deg)` : '';
     }
     disconnectedCallback() {
         // deferred stop 무시하고 즉시 정리

@@ -23,6 +23,23 @@ function pageToCanvas(pageX: number, pageY: number): { x: number; y: number } {
   return { x: (pageX - off.left) / scale, y: (pageY - off.top) / scale };
 }
 
+function distToSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
+  const dx = bx - ax, dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return Math.hypot(px - ax, py - ay);
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+
+function nearestSegment(px: number, py: number, pts: { x: number; y: number }[]): { index: number; dist: number } {
+  let minDist = Infinity, minIndex = 0;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const d = distToSegment(px, py, pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y);
+    if (d < minDist) { minDist = d; minIndex = i; }
+  }
+  return { index: minIndex, dist: minDist };
+}
+
 function getConnectionPoints(w: Widget): { point: 'top' | 'right' | 'bottom' | 'left'; x: number; y: number }[] {
   const { x, y, width, height } = w.geometry;
   return [
@@ -62,14 +79,27 @@ function renderLineHandles() {
 
   const svgEl = $svg[0] as unknown as SVGSVGElement;
 
-  // 라인 경로 표시
   const pts = [[x1, y1], ...waypoints.map(p => [p.x, p.y]), [x2, y2]];
+  const pointsAttr = pts.map(p => p.join(',')).join(' ');
+
+  // 더블클릭 히트 영역 — 투명하지만 넓은 선폭으로 클릭 감지
+  const hitLine = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  hitLine.setAttribute('points', pointsAttr);
+  hitLine.setAttribute('stroke', 'transparent');
+  hitLine.setAttribute('stroke-width', '12');
+  hitLine.setAttribute('fill', 'none');
+  hitLine.setAttribute('class', 'line-body-hit');
+  hitLine.style.cursor = 'crosshair';
+  svgEl.appendChild(hitLine);
+
+  // 라인 경로 표시
   const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-  polyline.setAttribute('points', pts.map(p => p.join(',')).join(' '));
+  polyline.setAttribute('points', pointsAttr);
   polyline.setAttribute('stroke', '#4a9eff');
   polyline.setAttribute('stroke-width', '2');
   polyline.setAttribute('fill', 'none');
   polyline.setAttribute('stroke-dasharray', '4 2');
+  polyline.style.pointerEvents = 'none';
   svgEl.appendChild(polyline);
 
   // 끝점 핸들
@@ -138,13 +168,19 @@ export function initLineHandles() {
   // 라인 몸체 더블클릭으로 관절점 추가
   $(document).on('dblclick', '.line-body-hit', function (e) {
     e.stopPropagation();
-    const { selectedId } = store.getState();
+    const { selectedId, schema } = store.getState();
     if (!selectedId) return;
-    const pos = pageToCanvas(e.pageX, e.pageY);
-    const { schema } = store.getState();
     const w = schema.widgets.find(x => x.id === selectedId);
     if (!w || w.type !== 'LINE') return;
-    store.getState().addLineWaypoint(selectedId, 0, pos.x, pos.y);
+    const pos = pageToCanvas(e.pageX, e.pageY);
+    const wps: Waypoint[] = (w.properties.waypoints as Waypoint[] | undefined) ?? [];
+    const allPts = [
+      { x: Number(w.properties.x1 ?? 0), y: Number(w.properties.y1 ?? 0) },
+      ...wps,
+      { x: Number(w.properties.x2 ?? 0), y: Number(w.properties.y2 ?? 0) },
+    ];
+    const { index } = nearestSegment(pos.x, pos.y, allPts);
+    store.getState().addLineWaypoint(selectedId, index, pos.x, pos.y);
   });
 
   $(document).on('mousemove', (e) => {

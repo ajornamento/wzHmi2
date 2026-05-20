@@ -1,4 +1,5 @@
 // 에디터 앱 진입점 — 모든 컴포넌트 초기화
+import '@wzhmi/widgets';
 import $ from 'jquery';
 import { initToolbar } from './components/toolbar';
 import { initWidgetPalette } from './components/widgetPalette';

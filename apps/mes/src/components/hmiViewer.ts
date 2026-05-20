@@ -1,6 +1,8 @@
 // MES HMI 뷰어 — 메뉴 ID로 스키마 로드 및 커스터마이징 적용
 import type { HmiSchema } from '@wzhmi/core';
 import { useViewerStore } from '@viewer/store/viewerStore';
+import * as customLine1 from '../customizations/production-line-1';
+import * as customLine2 from '../customizations/production-line-2';
 
 const store = useViewerStore;
 const HMI_API_BASE = 'http://localhost:3001/api/hmi';
@@ -10,6 +12,11 @@ interface Customization {
   actions?: Record<string, (widget: unknown) => void>;
   styles?: Record<string, unknown>;
 }
+
+const CUSTOM_MAP: Record<string, Customization> = {
+  'production-line-1': customLine1 as Customization,
+  'production-line-2': customLine2 as Customization,
+};
 
 export async function loadScreen(menuId: string): Promise<void> {
   // 스키마 로드
@@ -23,13 +30,8 @@ export async function loadScreen(menuId: string): Promise<void> {
     return;
   }
 
-  // 커스터마이징 동적 임포트
-  let custom: Customization = {};
-  try {
-    custom = await import(`../customizations/${menuId}.ts`) as Customization;
-  } catch {
-    // 커스터마이징 파일이 없으면 기본값 사용
-  }
+  // 커스터마이징 로드
+  const custom: Customization = CUSTOM_MAP[menuId] ?? {};
 
   // 액션 등록
   if (custom.actions) {

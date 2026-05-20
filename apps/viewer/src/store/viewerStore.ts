@@ -3,7 +3,7 @@ import type { HmiSchema, UserRole } from '@wzhmi/core';
 import { emptySchema } from '@wzhmi/core';
 import type { PollFetchFn } from '../engine/PollingDataSource';
 
-export type DataSourceMode = 'websocket' | 'polling' | 'mqtt';
+export type DataSourceMode = 'websocket' | 'polling' | 'mqtt' | 'mock';
 export type { PollFetchFn };
 
 interface ViewerState {
@@ -30,7 +30,7 @@ export const useViewerStore = create<ViewerState>((set) => ({
   serverUrl: 'ws://localhost:3001',
   scale: 1,
   currentUser: { id: 'user1', role: 'VIEWER' },
-  dataSourceMode: 'websocket',
+  dataSourceMode: 'mock',
   pollInterval: 2000,
   customPollFn: null,
   mqttBrokerUrl: 'ws://localhost:9001',
