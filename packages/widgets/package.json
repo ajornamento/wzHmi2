@@ -2,9 +2,9 @@
   "name": "@wzhmi/widgets",
   "version": "1.0.0",
   "private": true,
-  "main": "./src/index.ts",
+  "main": "./src/index.js",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.js"
   },
   "dependencies": {
     "@wzhmi/core": "*"

@@ -49,6 +49,12 @@
     }
     #hmi-canvas-scaler { position: absolute; }
     #hmi-canvas { position: relative; overflow: hidden; }
+
+    /* ── HTML 모드 화면 컨테이너 ── */
+    #html-screen-container {
+      display: none; position: fixed; top: 44px; left: 0; right: 0; bottom: 0;
+      overflow: auto; background: #111;
+    }
   </style>
 </head>
 <body>
@@ -102,6 +108,9 @@
   <button id="btn-editor" class="tb-btn">에디터</button>
 </div>
 
+<!-- ── HTML 화면 컨테이너 (HTML 모드 전용) ── -->
+<div id="html-screen-container"></div>
+
 <!-- ── HMI 캔버스 ── -->
 <div id="hmi-canvas-outer">
   <div id="hmi-canvas-scaler">
@@ -109,6 +118,6 @@
   </div>
 </div>
 
-<script type="module" src="/src/main.ts"></script>
+<script type="module" src="./src/main.js"></script>
 </body>
 </html>
